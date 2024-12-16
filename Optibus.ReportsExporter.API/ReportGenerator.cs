@@ -87,7 +87,7 @@ public class ReportGenerator
         var rawStartTime = dutyEvent.Type switch
         {
             "vehicle_event" => GetVehicleEvents(schedule, dutyEvent.VehicleId)
-                .First()
+                .First(v => v.Sequence == dutyEvent.VehicleEventSequence)
                 .StartTime,
             "taxi" => dutyEvent.StartTime,
             "sign_on" => dutyEvent.StartTime,
@@ -102,7 +102,7 @@ public class ReportGenerator
         var rawEndTime = dutyEvent.Type switch
         {
             "vehicle_event" => GetVehicleEvents(schedule, dutyEvent.VehicleId)
-                .Last()
+                .Last(v => v.Sequence == dutyEvent.VehicleEventSequence)
                 .EndTime,
             "taxi" => dutyEvent.EndTime,
             "sign_on" => dutyEvent.EndTime,
