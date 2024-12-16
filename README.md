@@ -91,30 +91,31 @@ dotnet test
 ## Example JSON Input
 ```json
 {
-  "duties": [
-    {
-      "id": "D1",
-      "events": [
-        { "sequence": 1, "type": "vehicle_event", "vehicle_id": "V1" },
-        { "sequence": 2, "type": "vehicle_event", "vehicle_id": "V1" }
-      ]
-    }
+  "stops": [
+    { "stop_id": "S1", "stop_name": "Depot A", "latitude": 34.053788, "longitude": -118.243691, "is_depot": true },
+    { "stop_id": "S2", "stop_name": "Station B", "latitude": 34.045356, "longitude": -118.260212, "is_depot": false }
   ],
   "vehicles": [
     {
-      "id": "V1",
-      "events": [
-        { "sequence": 1, "type": "service_trip", "trip_id": "T1" },
-        { "sequence": 2, "type": "deadhead" }
+      "vehicle_id": "V1",
+      "vehicle_events": [
+        { "vehicle_event_sequence": 0, "vehicle_event_type": "service_trip", "trip_id": "T1", "duty_id": "1" },
+        { "vehicle_event_sequence": 1, "vehicle_event_type": "deadhead", "trip_id": "T2", "duty_id": "1", "start_time":"0.09:00" , "end_time":"0.11.00" }
       ]
     }
   ],
   "trips": [
-    { "id": "T1", "origin_stop_id": "S1", "destination_stop_id": "S2", "arrival_time": "0.08:00", "departure_time": "0.08:15" }
+    { "trip_id": "T1", "origin_stop_id": "S1", "destination_stop_id": "S2", "departure_time": "0.07:00", "arrival_time": "0.07:45" },
+    { "trip_id": "T2", "origin_stop_id": "S2", "destination_stop_id": "S1", "departure_time": "0.08:00", "arrival_time": "0.08:45" }
   ],
-  "stops": [
-    { "id": "S1", "name": "Depot A" },
-    { "id": "S2", "name": "Station B" }
+  "duties": [
+    {
+      "duty_id": "1",
+      "duty_events": [
+        { "duty_event_type": "vehicle_event", "vehicle_id": "V1", "vehicle_event_sequence": 0 },
+        { "duty_event_type": "vehicle_event", "vehicle_id": "V1", "vehicle_event_sequence": 1 }
+      ]
+    }
   ]
 }
 ```
