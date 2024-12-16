@@ -17,10 +17,14 @@ public class ReportGenerator
                 page.Content().Column(column =>
                 {
                     column.Item().Text("Duty report")
-                        .FontSize(20).Bold();
-                    column.Spacing(10);
+                        .FontSize(30).Bold();
+                    column.Spacing(20);
 
                     GenerateStartEndTimeStep(column, data);
+
+                    column.Spacing(30);
+
+                    GenerateStartEndTimeNameStep(column, data);
                 });
             });
         });
@@ -43,7 +47,7 @@ public class ReportGenerator
         column.Item().Text("Step 1 - Start and End Time")
                         .FontSize(16).Bold();
                         
-                    column.Spacing(5);
+                    column.Spacing(10);
                     
                     column.Item().Table(table =>
                     {
@@ -54,7 +58,6 @@ public class ReportGenerator
                             columns.RelativeColumn(2); 
                         });
 
-                        // Cabeçalhos
                         table.Header(header =>
                         {
                             header.Cell().Text("Duty ID").Bold();
@@ -62,7 +65,8 @@ public class ReportGenerator
                             header.Cell().Text("End Time").Bold();
                         });
 
-                        // Dados
+                        column.Spacing(10);
+
                         foreach (var duty in data.Duties)
                         {
                             var startTime = GetDutyEventStartTime(data, duty.Events.First());
@@ -73,6 +77,91 @@ public class ReportGenerator
                             table.Cell().Text(endTime.ToString("HH:mm"));
                         }
                     });
+    }
+    public void GenerateStartEndTimeNameStep(ColumnDescriptor column, ScheduleModel data)
+    {
+        column.Item().Text("Step 2– Start and End Stop Name")
+            .FontSize(16).Bold();
+                        
+        column.Spacing(10);
+                    
+        column.Item().Table(table =>
+        {
+            table.ColumnsDefinition(columns =>
+            {
+                columns.RelativeColumn(1); 
+                columns.RelativeColumn(1); 
+                columns.RelativeColumn(1); 
+                columns.RelativeColumn(3); 
+                columns.RelativeColumn(3); 
+            });
+
+            table.Header(header =>
+            {
+                header.Cell().Text("Duty ID").Bold();
+                header.Cell().Text("Start Time").Bold();
+                header.Cell().Text("End Time").Bold();
+                header.Cell().Text("Start stop description").Bold();
+                header.Cell().Text("End stop description").Bold();
+            });
+            
+            column.Spacing(10);
+
+            foreach (var duty in data.Duties)
+            {
+                var startTime = GetDutyEventStartTime(data, duty.Events.First());
+                var endTime = GetDutyEventEndTime(data, duty.Events.Last());
+                var startStopDescription = GetServiceTripStartStopDescription(data, duty);
+                var endStopDescription = GetServiceTripEndStopDescription(data, duty);
+
+                table.Cell().Text(duty.Id);
+                table.Cell().Text(startTime.ToString("HH:mm"));
+                table.Cell().Text(endTime.ToString("HH:mm"));
+                table.Cell().Text(startStopDescription);
+                table.Cell().Text(endStopDescription);
+            }
+        });
+    }
+ 
+    public string GetServiceTripEndStopDescription(ScheduleModel schedule, Duty duty)
+    {
+        var dutyEvent = duty.Events
+            .Last(d => d.Type == "vehicle_event");
+
+        var lastServiceTripId = GetVehicleEvents(schedule, dutyEvent.VehicleId)
+            .Last(evt => evt.Type == "service_trip" && evt.DutyId == duty.Id)
+            .TripId;
+        
+        var destinationStopId = schedule
+            .Trips
+            .Last(trip => trip.Id == lastServiceTripId)
+            .DestinationStopId;
+
+        return GetStopName(schedule, destinationStopId);
+    }
+
+    public string GetServiceTripStartStopDescription(ScheduleModel schedule, Duty duty)
+    {
+        var dutyEvent = duty.Events
+            .First(d => d.Type == "vehicle_event");
+
+        var firstServiceTripId = GetVehicleEvents(schedule, dutyEvent.VehicleId)
+            .First(evt => evt.Type == "service_trip" && evt.DutyId == duty.Id)
+            .TripId;
+        
+        var originStopId = schedule
+            .Trips
+            .First(trip => trip.Id == firstServiceTripId)
+            .OriginStopId;
+        
+        return GetStopName(schedule, originStopId);
+    }
+    
+    public string GetStopName(ScheduleModel schedule, string stopId)
+    {
+        return schedule.Stops
+            .First(stop => stop.Id == stopId)
+            .Name;
     }
 
     public IEnumerable<VehicleEvent> GetVehicleEvents(ScheduleModel schedule, string vehicleId)

@@ -87,6 +87,9 @@ namespace Optibus.ReportsExporter.API
 
         [JsonPropertyName("duty_id")]
         public string DutyId { get; set; }
+        
+        [JsonPropertyName("trip_id")]
+        public string TripId { get; set; }        
     }
 
     public class Duty
@@ -117,5 +120,11 @@ namespace Optibus.ReportsExporter.API
 
         [JsonPropertyName("end_time")]
         public string EndTime { get; set; }
+        
+        [JsonPropertyName("origin_stop_id")]
+        public string OriginStopId { get; set; }
+
+        [JsonPropertyName("destination_stop_id")]
+        public string DestinationStopId { get; set; }
     }
 }

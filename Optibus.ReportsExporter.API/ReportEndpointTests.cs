@@ -21,6 +21,29 @@ public class ReportEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         // Arrange
         var request = new ScheduleModel
         {
+            Stops = new List<Stop>
+            {
+                new Stop { Id = "S1", Name = "Depot A" },
+                new Stop { Id = "S2", Name = "Station B" },
+                new Stop { Id = "S3", Name = "Station C" }
+            },
+            Vehicles = new List<Vehicle>
+            {
+                new Vehicle
+                {
+                    Id = "V1",
+                    Events = new List<VehicleEvent>
+                    {
+                        new VehicleEvent { Sequence = 0, StartTime = "0.03:00", EndTime = "0.04:00", DutyId = "D1", TripId = "T1", Type = "service_trip"},
+                        new VehicleEvent { Sequence = 1, StartTime = "0.05:00", EndTime = "0.06:00", DutyId = "D1", TripId = "T2", Type = "service_trip"}
+                    }
+                }
+            },
+            Trips = new List<Trip>
+            {
+                new Trip { Id = "T1", OriginStopId = "S1", DestinationStopId = "S2" },
+                new Trip { Id = "T2", OriginStopId = "S2", DestinationStopId = "S3" }
+            },
             Duties = new List<Duty>
             {
                 new Duty
@@ -28,7 +51,7 @@ public class ReportEndpointTests : IClassFixture<WebApplicationFactory<Program>>
                     Id = "D1",
                     Events = new List<DutyEvent>
                     {
-                        new DutyEvent { Type = "taxi", StartTime = "0.06:00", EndTime = "0.07:00" }
+                        new DutyEvent { Type = "vehicle_event", VehicleId = "V1", VehicleEventSequence = 0}
                     }
                 }
             }

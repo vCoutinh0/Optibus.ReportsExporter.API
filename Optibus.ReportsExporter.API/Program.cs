@@ -7,11 +7,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.Configure<JsonOptions>(options =>
-{
-    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()); // Se usar Enum
-});
 builder.Services.AddScoped<ReportGenerator>();
 
 var app = builder.Build();

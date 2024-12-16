@@ -14,6 +14,12 @@ public class ReportGeneratorTests
         
         _schedule = new ScheduleModel
         {
+            Stops = new List<Stop>
+            {
+                new Stop { Id = "S1", Name = "Depot A" },
+                new Stop { Id = "S2", Name = "Station B" },
+                new Stop { Id = "S3", Name = "Station C" }
+            },
             Vehicles = new List<Vehicle>
             {
                 new Vehicle
@@ -25,6 +31,32 @@ public class ReportGeneratorTests
                         new VehicleEvent { Sequence = 2, StartTime = "0.07:00", EndTime = "0.07:30" },
                         new VehicleEvent { Sequence = 2, StartTime = "0.09:00", EndTime = "0.10:30" },
                         new VehicleEvent { Sequence = 3, StartTime = "0.11:00", EndTime = "0.12:30" }
+                    }
+                },
+                new Vehicle
+                {
+                    Id = "V2",
+                    Events = new List<VehicleEvent>
+                    {
+                        new VehicleEvent { Type = "service_trip", TripId = "T1", DutyId = "D1" },
+                        new VehicleEvent { Type = "service_trip", TripId = "T2", DutyId = "D1" },
+                        new VehicleEvent { Type = "vehicle_event", DutyId = "D1" }
+                    }
+                }
+            },
+            Trips = new List<Trip>
+            {
+                new Trip { Id = "T1", OriginStopId = "S1", DestinationStopId = "S2" },
+                new Trip { Id = "T2", OriginStopId = "S2", DestinationStopId = "S3" }
+            },
+            Duties = new List<Duty>
+            {
+                new Duty
+                {
+                    Id = "D1",
+                    Events = new List<DutyEvent>
+                    {
+                        new DutyEvent { Type = "vehicle_event", VehicleId = "V2" }
                     }
                 }
             }
@@ -48,38 +80,14 @@ public class ReportGeneratorTests
     [Fact]
     public void GetVehicleEvents_ShouldReturnCorrectEvents()
     {
-        // Arrange
-        var schedule = new ScheduleModel
-        {
-            Vehicles = new List<Vehicle>
-            {
-                new Vehicle
-                {
-                    Id = "V1",
-                    Events = new List<VehicleEvent>
-                    {
-                        new VehicleEvent { StartTime = "0.06:00", EndTime = "0.06:30" },
-                        new VehicleEvent { StartTime = "0.07:00", EndTime = "0.07:30" }
-                    }
-                },
-                new Vehicle
-                {
-                    Id = "V2",
-                    Events = new List<VehicleEvent>
-                    {
-                        new VehicleEvent { StartTime = "0.08:00", EndTime = "0.08:30" }
-                    }
-                }
-            }
-        };
 
         // Act
-        var events = _reportGenerator.GetVehicleEvents(schedule, "V1");
+        var events = _reportGenerator.GetVehicleEvents(_schedule, "V1");
 
         // Assert
-        events.Should().HaveCount(2);
-        events.First().StartTime.Should().Be("0.06:00");
-        events.Last().EndTime.Should().Be("0.07:30");
+        events.Should().HaveCount(4);
+        events.First().StartTime.Should().Be("0.05:00");
+        events.Last().EndTime.Should().Be("0.12:30");
     }
     
     [Fact]
@@ -239,4 +247,34 @@ public class ReportGeneratorTests
         act.Should().Throw<NotSupportedException>()
            .WithMessage("Unsupported event type: unsupported_event");
     }
+    
+    [Fact]
+    public void GetServiceTripStartStopDescription_ShouldReturnCorrectStartStopName()
+    {
+        // Arrange
+        var duty = _schedule.Duties.First(d => d.Id == "D1");
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var startStopName = reportGenerator.GetServiceTripStartStopDescription(_schedule, duty);
+
+        // Assert
+        startStopName.Should().Be("Depot A");
+    }
+    
+    [Fact]
+    public void GetServiceTripEndStopDescription_ShouldReturnCorrectEndStopName()
+    {
+        // Arrange
+        var duty = _schedule.Duties.First(d => d.Id == "D1");
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var endStopName = reportGenerator.GetServiceTripEndStopDescription(_schedule, duty);
+
+        // Assert
+        endStopName.Should().Be("Station C");
+    }
+
+
 }
