@@ -34,15 +34,15 @@ public class ReportEndpointTests : IClassFixture<WebApplicationFactory<Program>>
                     Id = "V1",
                     Events = new List<VehicleEvent>
                     {
-                        new VehicleEvent { Sequence = 0, StartTime = "0.03:00", EndTime = "0.04:00", DutyId = "D1", TripId = "T1", Type = "service_trip"},
-                        new VehicleEvent { Sequence = 1, StartTime = "0.05:00", EndTime = "0.06:00", DutyId = "D1", TripId = "T2", Type = "service_trip"}
+                        new VehicleEvent { Sequence = 0, DutyId = "D1", TripId = "T1", Type = "service_trip"},
+                        new VehicleEvent { Sequence = 1, DutyId = "D1", TripId = "T2", Type = "service_trip"}
                     }
                 }
             },
             Trips = new List<Trip>
             {
-                new Trip { Id = "T1", OriginStopId = "S1", DestinationStopId = "S2" },
-                new Trip { Id = "T2", OriginStopId = "S2", DestinationStopId = "S3" }
+                new Trip { Id = "T1", OriginStopId = "S1", DestinationStopId = "S2", ArrivalTime = "0.07:30", DepartureTime = "0.07:00" },
+                new Trip { Id = "T2", OriginStopId = "S2", DestinationStopId = "S3", ArrivalTime = "0.07:00", DepartureTime = "0.08:45" }
             },
             Duties = new List<Duty>
             {

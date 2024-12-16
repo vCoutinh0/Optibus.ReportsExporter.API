@@ -29,9 +29,9 @@ public class ReportGeneratorTests
                     {
                         new VehicleEvent { Sequence = 1, StartTime = "0.05:00", EndTime = "0.06:00" },
                         new VehicleEvent { Sequence = 2, StartTime = "0.07:00", EndTime = "0.07:30" },
-                        new VehicleEvent { Sequence = 2, StartTime = "0.09:00", EndTime = "0.10:30" },
-                        new VehicleEvent { Sequence = 3, StartTime = "0.11:00", EndTime = "0.12:30" }
-                    }
+                        new VehicleEvent { Sequence = 3, Type = "service_trip", TripId = "T1" },
+                        new VehicleEvent { Sequence = 4, Type = "dead_run", EndTime = "0.07:00", DestinationStopId = "S3"}
+                    },
                 },
                 new Vehicle
                 {
@@ -40,14 +40,22 @@ public class ReportGeneratorTests
                     {
                         new VehicleEvent { Type = "service_trip", TripId = "T1", DutyId = "D1" },
                         new VehicleEvent { Type = "service_trip", TripId = "T2", DutyId = "D1" },
-                        new VehicleEvent { Type = "vehicle_event", DutyId = "D1" }
+                    }
+                },
+                new Vehicle
+                {
+                    Id = "V3",
+                    Events = new List<VehicleEvent>
+                    {
+                        new VehicleEvent { Sequence = 0, Type = "service_trip", TripId = "T1", },
+                        new VehicleEvent { Sequence = 1, Type = "service_trip", TripId = "T2", }
                     }
                 }
             },
             Trips = new List<Trip>
             {
-                new Trip { Id = "T1", OriginStopId = "S1", DestinationStopId = "S2" },
-                new Trip { Id = "T2", OriginStopId = "S2", DestinationStopId = "S3" }
+                new Trip { Id = "T1", OriginStopId = "S1", DestinationStopId = "S2", ArrivalTime = "0.07:30", DepartureTime = "0.07:00" },
+                new Trip { Id = "T2", OriginStopId = "S2", DestinationStopId = "S3", ArrivalTime = "0.07:00", DepartureTime = "0.08:45" }
             },
             Duties = new List<Duty>
             {
@@ -57,6 +65,15 @@ public class ReportGeneratorTests
                     Events = new List<DutyEvent>
                     {
                         new DutyEvent { Type = "vehicle_event", VehicleId = "V2" }
+                    },
+                },
+                new Duty
+                {
+                    Id = "D2",
+                    Events = new List<DutyEvent>
+                    {
+                        new DutyEvent { Sequence = 0, Type = "vehicle_event", VehicleId = "V3" },
+                        new DutyEvent { Sequence = 1, Type = "vehicle_event", VehicleId = "V3" }
                     }
                 }
             }
@@ -80,7 +97,6 @@ public class ReportGeneratorTests
     [Fact]
     public void GetVehicleEvents_ShouldReturnCorrectEvents()
     {
-
         // Act
         var events = _reportGenerator.GetVehicleEvents(_schedule, "V1");
 
@@ -276,5 +292,116 @@ public class ReportGeneratorTests
         endStopName.Should().Be("Station C");
     }
 
+    [Fact]
+    public void GetRawVehicleEventEndTime_ShouldReturnArrivalTime_ForServiceTrip()
+    {
+        // Arrange
+        var dutyEvent = new DutyEvent { VehicleId = "V1", VehicleEventSequence = 3, Type = "vehicle_event" };
+        var reportGenerator = new ReportGenerator();
 
+        // Act
+        var endTime = reportGenerator.GetRawVehicleEventEndTime(_schedule, dutyEvent);
+
+        // Assert
+        endTime.Should().Be("0.07:30");
+    }
+    
+    [Fact]
+    public void GetRawVehicleEventEndTime_ShouldReturnEndTime_ForNonServiceTrip()
+    {
+        // Arrange
+        var dutyEvent = new DutyEvent { VehicleId = "V1", VehicleEventSequence = 4, Type = "vehicle_event" };
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var endTime = reportGenerator.GetRawVehicleEventEndTime(_schedule, dutyEvent);
+
+        // Assert
+        endTime.Should().Be("0.07:00"); 
+    }
+    
+    [Fact]
+    public void GetDestinationStopId_ShouldReturnStopId_ForNonVehicleEvent()
+    {
+        // Arrange
+        var dutyEvent = new DutyEvent { Type = "taxi", DestinationStopId = "S1" };
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var stopId = reportGenerator.GetDestinationStopId(_schedule, dutyEvent);
+
+        // Assert
+        stopId.Should().Be("S1");
+    }
+    
+    [Fact]
+    public void GetDestinationStopId_ShouldReturnStopId_ForServiceTrip()
+    {
+        // Arrange
+        var dutyEvent = new DutyEvent { VehicleId = "V1", VehicleEventSequence = 3, Type = "vehicle_event" };
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var stopId = reportGenerator.GetDestinationStopId(_schedule, dutyEvent);
+
+        // Assert
+        stopId.Should().Be("S2");
+    }
+    
+    [Fact]
+    public void GetDestinationStopId_ShouldReturnStopId_ForNonServiceTrip()
+    {
+        // Arrange
+        var dutyEvent = new DutyEvent { VehicleId = "V1", VehicleEventSequence = 4, Type = "vehicle_event" };
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var stopId = reportGenerator.GetDestinationStopId(_schedule, dutyEvent);
+
+        // Assert
+        stopId.Should().Be("S3");
+    }
+
+    [Fact]
+    public void GetBreaks_ShouldReturnABreak_WhenBreakExceeds15Minutes()
+    {
+        // Arrange
+        var duty = _schedule.Duties[1];
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var breaks = reportGenerator.GetBreaks(_schedule, duty);
+
+        // Assert
+        breaks.Should().HaveCount(1);
+
+        var breakInfo = breaks.First();
+        breakInfo.BreakDuration.TotalMinutes.Should().Be(30); 
+        breakInfo.BreakStartTime.ToString("HH:mm:ss").Should().Be("06:30:00");
+        breakInfo.BreakStopName.Should().Be("Station B");       // Nome da parada correspondente
+    }
+    
+    [Fact]
+    public void GetBreaks_ShouldReturnEmpty_WhenNoBreakExceeds15Minutes()
+    {
+        // Arrange
+        var duty = new Duty
+        {
+            Id = "D3",
+            Events = new List<DutyEvent>
+            {
+                new DutyEvent { Sequence = 0, Type = "vehicle_event", VehicleId = "V3" },
+                new DutyEvent { Sequence = 1, Type = "vehicle_event", VehicleId = "V3" }
+            }
+        };
+
+        var reportGenerator = new ReportGenerator();
+
+        // Act
+        var breaks = reportGenerator.GetBreaks(_schedule, duty);
+
+        // Assert
+        breaks.Should().BeEmpty();
+    }
+    
 }
